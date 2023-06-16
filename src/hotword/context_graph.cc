@@ -113,7 +113,7 @@ int ContextGraph::TraceContext(int cur_state, int unit_id, int* final_state) {
   matcher.SetState(cur_state);
   if (matcher.Find(unit_id)) {
     next_state = matcher.Value().nextstate;
-    if (graph_->Final(next_state) == Weight::One()) {
+    if (graph_->Final(next_state) != Weight::Zero()) {
       *final_state = next_state;
     }
     return next_state;
@@ -213,14 +213,14 @@ void ContextGraph::ConvertToAC() {
   for (int state = 0; state < num_states; state++) {
     int fail_state = fail_states[state];
     if (fail_state < 0) continue;
-    if (graph_->Final(fail_state) == Weight::One()) {
+    if (graph_->Final(fail_state) != Weight::Zero()) {
       fallback_finals_[state] = fail_state;
       if (graph_->NumArcs(fail_state) == 0) continue;
     }
-    if (graph_->Final(state) == Weight::One() && fail_state == 0) continue;
+    if (graph_->Final(state) != Weight::Zero() && fail_state == 0) continue;
 
     float fail_weight = total_weights[fail_state] - total_weights[state];
-    if (graph_->Final(state) == Weight::One()) {
+    if (graph_->Final(state) != Weight::Zero()) {
       fail_weight = 0;
     }
     graph_->AddArc(state, fst::StdArc(0, 0, fail_weight, fail_state));
@@ -245,7 +245,7 @@ int ContextGraph::GetNextState(int cur_state, int unit_id, float* score,
     *score += arc.weight.Value();
     // Collect all contexts in the decode result
     if (contexts != nullptr) {
-      if (graph_->Final(next_state) == Weight::One()) {
+      if (graph_->Final(next_state) != Weight::Zero()) {
         contexts->insert(context_table_[next_state]);
       }
       int fallback_final = next_state;
